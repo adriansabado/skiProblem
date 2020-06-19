@@ -43,6 +43,27 @@ void getInput(const std::string& fileName, std::vector<std::vector<DropPoint>>& 
 		rowContainer.clear();
 	}
 }
+Path getLongestPath(std::vector<std::vector<DropPoint>>& skiMap, 
+				   const uint16_t row, const uint16_t column, const uint16_t& parentValue);
+void evaluateOnePath(const uint16_t row, const uint16_t column, Path& currentLongest,
+	                 std::vector<std::vector<DropPoint>>& skiMap, const uint16_t height);
+
+void evaluateOnePath(const uint16_t row, const uint16_t column, Path& currentLongest,
+	                 std::vector<std::vector<DropPoint>>& skiMap, const uint16_t height)
+{
+	Path path;
+	if (skiMap[row][column].path.longestPath != 0xFFFFFFFF) path = skiMap[row][column].path;
+	else
+	{
+		path = getLongestPath(skiMap, row, column, height);
+	}
+	if (path.longestPath > currentLongest.longestPath) currentLongest = path;
+	else if (path.longestPath == currentLongest.longestPath &&
+			 path.dropInHeight > currentLongest.dropInHeight)
+	{
+		currentLongest = path;
+	}
+}
 
 Path getLongestPath(std::vector<std::vector<DropPoint>>& skiMap, 
 				   const uint16_t row, const uint16_t column, const uint16_t& parentValue)
@@ -55,56 +76,22 @@ Path getLongestPath(std::vector<std::vector<DropPoint>>& skiMap,
 	if (row > 0 && skiMap[row - 1][column].height < height)
 	{
 		hasValid = true;
-		if (skiMap[row - 1][column].path.longestPath != 0xFFFFFFFF) currentLongest = skiMap[row - 1][column].path;
-		else currentLongest = getLongestPath(skiMap, row - 1, column, height);
+		evaluateOnePath(row - 1, column, currentLongest, skiMap, height);
 	}
 	if (column + 1 < skiMap[row].size() && skiMap[row][column + 1].height < height)
 	{
 		hasValid = true;
-		Path pathEast;
-		if (skiMap[row][column + 1].path.longestPath != 0xFFFFFFFF) pathEast = skiMap[row][column + 1].path;
-		else
-		{
-			pathEast = getLongestPath(skiMap, row, column + 1, height);
-		}
-		if (pathEast.longestPath > currentLongest.longestPath) currentLongest = pathEast;
-		else if (pathEast.longestPath == currentLongest.longestPath &&
-				 pathEast.dropInHeight > currentLongest.dropInHeight)
-		{
-			currentLongest = pathEast;
-		}
+		evaluateOnePath(row, column + 1, currentLongest, skiMap, height);
 	}
 	if (row + 1 < skiMap.size() && skiMap[row + 1][column].height < height)
 	{
 		hasValid = true;
-		Path pathSouth;
-		if (skiMap[row + 1][column].path.longestPath != 0xFFFFFFFF) pathSouth = skiMap[row + 1][column].path;
-		else
-		{
-			Path pathSouth = getLongestPath(skiMap, row + 1, column, height);
-			if (pathSouth.longestPath > currentLongest.longestPath) currentLongest = pathSouth;
-			else if (pathSouth.longestPath == currentLongest.longestPath &&
-					 pathSouth.dropInHeight > currentLongest.dropInHeight)
-			{
-				currentLongest = pathSouth;
-			}
-		}
+		evaluateOnePath(row + 1, column, currentLongest, skiMap, height);
 	}
 	if (column > 0 && skiMap[row][column - 1].height < height)
 	{
 		hasValid = true;
-		Path pathWest;
-		if (skiMap[row][column - 1].path.longestPath != 0xFFFFFFFF) pathWest = skiMap[row][column - 1].path;
-		else
-		{
-			Path pathWest = getLongestPath(skiMap, row, column - 1, height);
-			if (pathWest.longestPath > currentLongest.longestPath) currentLongest = pathWest;
-			else if (pathWest.longestPath == currentLongest.longestPath &&
-					 pathWest.dropInHeight > currentLongest.dropInHeight)
-			{
-				currentLongest = pathWest;
-			}
-		}
+		evaluateOnePath(row, column - 1, currentLongest, skiMap, height);
 	}
 	if (hasValid)
 	{
@@ -112,6 +99,7 @@ Path getLongestPath(std::vector<std::vector<DropPoint>>& skiMap,
 		fromHere.dropInHeight += currentLongest.dropInHeight;
 		fromHere.path += " " + currentLongest.path;
 	}
+	skiMap[row][column].path = fromHere;
 	return fromHere;
 }
 
@@ -120,22 +108,21 @@ int main()
 	std::vector<std::vector<DropPoint>> skiMap;
 	getInput("map.txt", skiMap);
 
-	Path currentLongest;
+	Path currentLongest{0, 0, ""};
 
 	for (auto i = 0; i < skiMap.size(); ++i)
 	{
 		for (auto j = 0; j < skiMap[i].size(); ++j)
 		{
-			if (skiMap[i][j].path.longestPath == 0xFFFFFFFF)
+			Path currentPath;
+			if (skiMap[i][j].path.longestPath == 0xFFFFFFFF) currentPath = getLongestPath(skiMap, i, j, skiMap[i][j].height);
+			else currentPath = skiMap[i][j].path;
+
+			if (currentPath.longestPath > currentLongest.longestPath) currentLongest = currentPath;
+			else if (currentPath.longestPath == currentLongest.longestPath &&
+					 currentPath.dropInHeight > currentLongest.longestPath)
 			{
-				Path currentPath = getLongestPath(skiMap, i, j, skiMap[i][j].height);
-				// std::cout << currentPath.longestPath << " for " << i << " " << j << std::endl;
-				if (currentPath.longestPath > currentLongest.longestPath) currentLongest = currentPath;
-				else if (currentPath.longestPath == currentLongest.longestPath &&
-						 currentPath.dropInHeight > currentLongest.longestPath)
-				{
-					currentLongest = currentPath;
-				}
+				currentLongest = currentPath;
 			}
 
 		}
@@ -143,14 +130,6 @@ int main()
 	std::cout << currentLongest.path << std::endl;
 	std::cout << currentLongest.longestPath << std::endl;
 	std::cout << currentLongest.dropInHeight << std::endl;
-
-	// for (auto i = 0; i < skiMap.size(); ++i)
-	// {
-	// 	for (auto j = 0; j < skiMap[i].size(); ++j)
-	// 	{
-	// 		std::cout << skiMap[i][j].height << " ";
-	// 	}
-	// 	std::cout << std::endl;
-	// }
+	
 	return 0;
 }
