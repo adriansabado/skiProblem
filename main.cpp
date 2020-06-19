@@ -131,13 +131,9 @@ int main()
 
 		}
 	}
-	std::cout << currentLongest.path << std::endl;
-	std::cout << currentLongest.longestPath << std::endl;
-	std::cout << currentLongest.dropInHeight << std::endl;
-
-	// std::cout << skiMap[1][2].path.path << std::endl;
-	// std::cout << skiMap[1][2].path.longestPath << std::endl;
-	// std::cout << skiMap[1][2].path.dropInHeight << std::endl;
+	std::cout << "Length of calculated path: " << currentLongest.longestPath << std::endl;
+	std::cout << "Drop in height: " << currentLongest.dropInHeight << std::endl;
+	std::cout << "String of path: " << currentLongest.path << std::endl;
 
 	return 0;
 }
