@@ -57,22 +57,26 @@ void evaluateOnePath(const uint16_t row, const uint16_t column, Path& currentLon
 	{
 		path = getLongestPath(skiMap, row, column, height);
 	}
+
+	path.dropInHeight += height - skiMap[row][column].height; // add parent - currentPathBeingEvaluated + longestPathFromPathBeingEvaluated
+
 	if (path.longestPath > currentLongest.longestPath) currentLongest = path;
 	else if (path.longestPath == currentLongest.longestPath &&
 			 path.dropInHeight > currentLongest.dropInHeight)
 	{
 		currentLongest = path;
 	}
+	
 }
 
 Path getLongestPath(std::vector<std::vector<DropPoint>>& skiMap, 
 				   const uint16_t row, const uint16_t column, const uint16_t& parentValue)
 {
 	uint16_t height = skiMap[row][column].height;
-	Path currentLongest{0, 0, ""};
-	Path fromHere{1, (uint16_t)(parentValue - height), std::to_string(height)};
-	bool hasValid = false;
+	Path fromHere{1, 0, std::to_string(height)};
 
+	bool hasValid = false;
+	Path currentLongest{0, 0, ""};
 	if (row > 0 && skiMap[row - 1][column].height < height)
 	{
 		hasValid = true;
@@ -96,8 +100,8 @@ Path getLongestPath(std::vector<std::vector<DropPoint>>& skiMap,
 	if (hasValid)
 	{
 		fromHere.longestPath += currentLongest.longestPath;
-		fromHere.dropInHeight += currentLongest.dropInHeight;
-		fromHere.path += " " + currentLongest.path;
+		fromHere.path += "-" + currentLongest.path;
+		fromHere.dropInHeight = currentLongest.dropInHeight;
 	}
 	skiMap[row][column].path = fromHere;
 	return fromHere;
@@ -120,7 +124,7 @@ int main()
 
 			if (currentPath.longestPath > currentLongest.longestPath) currentLongest = currentPath;
 			else if (currentPath.longestPath == currentLongest.longestPath &&
-					 currentPath.dropInHeight > currentLongest.longestPath)
+					 currentPath.dropInHeight > currentLongest.dropInHeight)
 			{
 				currentLongest = currentPath;
 			}
@@ -130,6 +134,10 @@ int main()
 	std::cout << currentLongest.path << std::endl;
 	std::cout << currentLongest.longestPath << std::endl;
 	std::cout << currentLongest.dropInHeight << std::endl;
-	
+
+	// std::cout << skiMap[1][2].path.path << std::endl;
+	// std::cout << skiMap[1][2].path.longestPath << std::endl;
+	// std::cout << skiMap[1][2].path.dropInHeight << std::endl;
+
 	return 0;
 }
